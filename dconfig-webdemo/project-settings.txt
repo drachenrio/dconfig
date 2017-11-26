@@ -1,0 +1,8 @@
+Library Reference:
+  1. JEE Library Reference
+    Select dconfig-webdemo project
+    Right click Properties
+    At the Categories list, select Run
+    At the right hand side of the pane, select Apache Tomcat 6.0.16 from the server
+    drop down list.
+

@@ -1,0 +1,6 @@
+Library Reference:
+    Select dconfig-ui-jnlp project
+    Right click Properties
+    At the Categories list, select Run
+    At the right hand side of the pane, select Apache Tomcat 6.0.16 from the server
+    drop down list.

@@ -1,0 +1,6 @@
+Manifest-Version: 1.0
+X-COMMENT: Main-Class will be added automatically by build
+Implementation-Title: Dynamic Configuration Toolkit
+Implementation-Version: 1.1
+DConfig-Version: 1.1
+

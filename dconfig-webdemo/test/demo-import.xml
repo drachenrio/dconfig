@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurations><dconfig keyName="admin"/>
+	<dconfig keyName="admin.applications">
+		<attribute name="bool attr" dataType="Boolean">
+			<attributeValue>false</attributeValue>
+			<comments></comments>
+		</attribute>
+		<attribute name="boolAr" dataType="Boolean Array">
+			<attributeValue>false&amp;^#;true&amp;^#;true&amp;^#;false</attributeValue>
+			<comments></comments>
+		</attribute>
+		<attribute name="fArray" dataType="Float Array">
+			<attributeValue>1012.9&amp;^#;9.89123&amp;^#;3.24325&amp;^#;3.12415926</attributeValue>
+			<comments></comments>
+		</attribute>
+		<attribute name="floatAttr" dataType="Float">
+			<attributeValue>10.11</attributeValue>
+			<comments></comments>
+		</attribute>
+		<attribute name="int ar" dataType="Integer Array">
+			<attributeValue>205&amp;^#;101&amp;^#;102&amp;^#;103</attributeValue>
+			<comments></comments>
+		</attribute>
+		<attribute name="integer" dataType="Integer">
+			<attributeValue>101</attributeValue>
+			<comments></comments>
+		</attribute>
+		<attribute name="long attribute" dataType="Long">
+			<attributeValue>1000090</attributeValue>
+			<comments></comments>
+		</attribute>
+		<attribute name="longAr" dataType="Long Array">
+			<attributeValue>1000&amp;^#;3000&amp;^#;6000&amp;^#;9900</attributeValue>
+			<comments></comments>
+		</attribute>
+		<attribute name="new attribute #1" dataType="Double">
+			<attributeValue>3.14159278</attributeValue>
+			<comments></comments>
+		</attribute>
+		<attribute name="new attribute #2" dataType="Double Array">
+			<attributeValue>3.14&amp;^#;3.1415&amp;^#;3.1415926</attributeValue>
+			<comments></comments>
+		</attribute>
+		<attribute name="new attribute #3" dataType="Datetime">
+			<attributeValue>01/25/2007 00:00:00</attributeValue>
+			<comments></comments>
+		</attribute>
+		<attribute name="new attribute #4" dataType="Datetime array">
+			<attributeValue>01/25/2007 00:00:00&amp;^#;01/12/2006 00:00:00</attributeValue>
+			<comments></comments>
+		</attribute>
+	</dconfig>
+	<dconfig keyName="admin.database"/><dconfig keyName="admin.system"/>
+	<dconfig keyName="admin.users"/>
+	<dconfig keyName="admin.webservices"/>
+</configurations>

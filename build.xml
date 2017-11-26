@@ -1,0 +1,371 @@
+<?xml version="1.0" ?>
+
+<project name="Dynamic Configuration Toolkit" default="all">
+
+    <!-- Create a new keystore using the following command
+         keytool -genkey -keystore keystore -alias dcfg 
+         Update the new passowrd for keystore.password entry in local_build.properties
+    -->
+
+    <!-- Load common local build properties, such as javac.debug, deploy.home  -->
+    <property file="build.properties"/>
+    <echo message="version.id=${version.id}"/>
+
+    <!-- General Configuration -->
+    <property name="app.name" value="dconfig"/>
+    <patternset id="java.files.pattern" includes="**/*.java"/>
+
+    <target name="clean" description="Removes build artifacts">
+        <delete dir="${builddir}"/>
+        <delete dir="${distdir}"/>
+        <ant antfile="build.xml" dir="${basedir}/dconfig-webdemo" target="clean-all"/>
+        <ant antfile="build.xml" dir="${basedir}/dconfig-ui-jnlp" target="clean-all"/>
+    </target>
+
+    <target name="init">
+        <!-- show current build properties -->
+        <echo message="--- build.properties ---"/>
+        <echo message="app.name=${app.name}"/>
+        <echo message="builddir=${builddir}"/>
+        <echo message="distdir=${distdir}"/>	
+        <echo message="javac.debug=${javac.debug}"/>
+        <echo message="keystore=${keystore}"/>
+        <echo message="manifest.file=${manifest.file}"/>
+        <echo message="deploy.home=${deploy.home}"/>        
+
+        <mkdir dir="${distdir}"/>
+        <mkdir dir="${builddir.dconfig-lib}"/>
+        <mkdir dir="${builddir.dconfig-lib}/classes"/>
+        <mkdir dir="${builddir.dconfig-ui}"/>
+        <mkdir dir="${builddir.dconfig-ui}/classes"/>
+
+        <path id="common.compile.classpath">
+		    <fileset dir="${srcdir.dconfig-lib}/lib" includes="*.jar"/>
+		    <fileset dir="${srcdir.dconfig-ui}/lib" includes="*.jar"/>
+        </path>
+        <path id="lib.compile.classpath">
+            <fileset dir="${srcdir.dconfig-lib}/lib" includes="*.jar"/>
+        </path>
+    </target>
+
+
+    <!-- Reusable targets invoked using antcall -->
+    <target name="compile-module">
+        <!-- Inputs: module, compile.classpath, test.classpath -->
+        <echo level="info">Compiling ${module}...</echo>
+        <echo level="info">javac.source ${javac.source}</echo>
+        <echo level="info">javac.target ${javac.target}</echo>
+        <echo level="info">javac.debug ${javac.debug}</echo>
+        <property name="additional.src.dirs" value=""/>
+        <javac source="${javac.source}" 
+	    target="${javac.target}" 
+            debug="${javac.debug}"
+            debuglevel="${debuglevel}"
+            srcdir="${src.dirs};${additional.src.dirs}"
+            destdir="${builddir}/${module}/classes"
+            includes="**/*.java"
+            classpath="${distdir.dconfig-lib}/dconfig-lib.jar"
+            classpathref="compile.classpath"
+        />
+    </target>
+    
+    <target name="compile-ui" depends="init, package-lib"  description="Compile ui modules">
+        <antcall target="compile-module" inheritAll="true">
+            <param name="module" value="dconfig-ui"/>
+            <param name="javac.source" value="1.5"/>
+            <param name="src.dirs" value="${srcdir.dconfig-ui}/src/java"/>
+            <reference refid="common.compile.classpath" torefid="compile.classpath"/>
+        </antcall>
+    </target>
+
+
+    <target name="package-ui" depends="compile-ui">
+        <mkdir  dir="${distdir.dconfig-ui}"/>
+
+        <!-- change version.id -->
+        <echo message="{basedir}/dconfig-lib/src/java/conf=${basedir}/dconfig-lib/src/java/conf"/>
+        <echo message="builddir.dconfig-lib=${builddir.dconfig-lib}"/>
+
+        <filter token="version.id" value="${version.id}"/>
+        <copy todir="${builddir.dconfig-ui}/classes/conf" filtering="true">
+           <fileset dir="${srcdir.dconfig-ui}/src/java/conf" excludes="**/*.java" />
+        </copy>
+        <!--
+        <jar destfile="${distdir.dconfig-ui}/${app.name}-ui.jar" manifest="${manifest.file}">
+            <fileset dir="${builddir.dconfig-ui}/classes"/>
+            <fileset dir="${srcdir.dconfig-db}/src" includes="**/*.sql"/>
+            <fileset dir="${srcdir.dconfig-ui}/src/java">
+              <include name="**/*.xml"/>
+              <include name="**/*.gif"/>
+              <include name="**/*.png"/>
+              <include name="**/*.jpg"/>
+              <include name="**/*.txt"/>
+              <exclude name="**/*.java"/>
+              <exclude name="**/*.form"/>
+              <exclude name="**/*.properties"/>
+    	    </fileset>
+        </jar>
+        -->
+        <echo level="info">Copy lib/*.jar files...</echo>
+        <copy todir="${distdir.dconfig-ui}/lib">
+           <fileset dir="${srcdir.dconfig-lib}/lib" excludes="servlet.jar"/>
+           <fileset dir="${srcdir.dconfig-ui}/lib"/>
+           <fileset file="${distdir.dconfig-lib}/dconfig-lib.jar"/>
+        </copy>
+        <copy tofile="${distdir.dconfig-ui}/README.txt" file="${basedir}/docs/README-bin.txt"/>
+        <copy todir="${distdir.dconfig-ui}/" >
+           <fileset dir="${srcdir.dconfig-ui}" includes="*.sh, *.bat"/>
+        </copy>
+        <copy todir="${distdir}" file="${srcdir.dconfig-webdemo}/test/demo-import.xml"/>
+
+    </target>
+
+    <target name="sign-jars" depends="package-ui">
+    <echo level="info">Signing JARS...</echo>
+    <property name="package.dir" value="${distdir.dconfig-ui}"/>
+	<signjar jar="${package.dir}/${app.name}-ui.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+	<signjar jar="${package.dir}/lib/commons-dbutils-1.0.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+	<signjar jar="${package.dir}/lib/commons-lang.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+	<signjar jar="${package.dir}/lib/commons-logging.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+	<signjar jar="${package.dir}/lib/commons-logging-api.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+    <signjar jar="${package.dir}/lib/dconfig-lib.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+    <signjar jar="${package.dir}/lib/dom4j-1.6.1.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+    <signjar jar="${package.dir}/lib/jaxen-1.1-beta-6.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>	
+	<signjar jar="${package.dir}/lib/jaxme-api-0.3.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+	<signjar jar="${package.dir}/lib/jsr173_1.0_api.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+    <signjar jar="${package.dir}/lib/log4j-1.2.8.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+	<signjar jar="${package.dir}/lib/msv-20030807.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+	<signjar jar="${package.dir}/lib/pull-parser-2.1.10.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+	<signjar jar="${package.dir}/lib/relaxngDatatype-20030807.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+	<signjar jar="${package.dir}/lib/spring-beans.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+	<signjar jar="${package.dir}/lib/spring-core.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+	<signjar jar="${package.dir}/lib/spring-dao.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+	<signjar jar="${package.dir}/lib/spring-jdbc.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+    <signjar jar="${package.dir}/lib/swing-layout-1.0.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+	<signjar jar="${package.dir}/lib/xpp3-1.1.3.3.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+	<signjar jar="${package.dir}/lib/xsdlib-20030807.jar" keystore="${keystore}" alias="dcfg" storepass="${keystore.password}"/>
+    </target>      
+        
+    <target name="compile-lib" depends="init"  description="Compile lib module">
+        <antcall target="compile-module" inheritAll="true">
+            <param name="module" value="dconfig-lib"/>
+            <param name="javac.source" value="1.3"/>
+            <param name="src.dirs" value="${basedir}/dconfig-lib/src/java/org/"/>
+            <reference refid="lib.compile.classpath" torefid="compile.classpath"/>
+        </antcall>
+
+    </target>
+    
+    <target name="package-lib" depends="compile-lib"  description="Package library modules">        
+        <mkdir  dir="${distdir.dconfig-lib}"/>
+        <mkdir  dir="${distdir.dconfig-lib}/conf"/>
+        <!-- change version.id -->
+        <echo message="{basedir}/dconfig-lib/src/java/conf=${basedir}/dconfig-lib/src/java/conf"/>
+        <echo message="builddir.dconfig-lib=${builddir.dconfig-lib}"/>
+        <filter token="version.id" value="${version.id}"/>
+        <copy todir="${builddir.dconfig-lib}/classes/conf" filtering="true">
+           <fileset dir="${basedir}/dconfig-lib/src/java/conf" excludes="**/*.java" />
+        </copy>
+
+        <jar destfile="${distdir.dconfig-lib}/${app.name}-lib-${version.id}.jar" >
+            <fileset dir="${builddir.dconfig-lib}/classes"/>
+        </jar>
+        
+        <echo level="info">Copy lib/*.jar files...</echo>
+        <copy todir="${distdir.dconfig-lib}">
+           <fileset dir="${srcdir.dconfig-lib}/lib" />
+        </copy>
+        <copy todir="${distdir.dconfig-lib}">
+           <fileset dir="${srcdir.dconfig-lib}/lib" includes="LICENSE.*"/>
+           <fileset dir="${basedir}" includes="LICENSE.txt"/>
+        </copy>
+        <copy todir="${distdir.dconfig-lib}/conf">
+            <fileset dir="${srcdir.dconfig-lib}/src/java/conf"/>
+        </copy>
+    </target>
+
+    <!--	JAVADOC SECTION		-->
+    <target name="javadoc-lib" depends="lib" description="Create DConfig lib javadoc">
+		<property name="javadoc.windowtitle" value="DConfig Library"/>
+        <mkdir  dir="${distdir.javadoc.dconfig-lib}"/>
+        <javadoc destdir="${distdir.javadoc.dconfig-lib}" source="${javac.source}" 
+        		notree="${javadoc.notree}" use="${javadoc.use}" 
+        		nonavbar="${javadoc.nonavbar}" 
+        		noindex="${javadoc.noindex}" 
+        		splitindex="${javadoc.splitindex}" 
+        		author="${javadoc.author}" 
+        		version="${javadoc.version}" 
+        		windowtitle="${javadoc.windowtitle}" 
+        		private="${javadoc.private}" 
+        		additionalparam="${javadoc.additionalparam}" 
+        		failonerror="true" useexternalfile="true">
+            <classpath>
+			    <fileset dir="${srcdir.dconfig-lib}/lib" includes="*.jar"/>
+            </classpath>
+            <sourcepath>
+                <pathelement location="${srcdir.dconfig-lib}/src/java"/>
+            </sourcepath>
+            <packageset dir="${srcdir.dconfig-lib}/src/java" includes="*/**"/>
+            <fileset dir="${srcdir.dconfig-lib}/src/java" includes="*.java"/>
+        </javadoc>
+    </target>
+
+    <target name="javadoc-ui" depends="ui" description="Create DConfig ui javadoc">
+		<property name="javadoc.windowtitle" value="DConfig UI"/>
+        <mkdir  dir="${distdir.javadoc.dconfig-ui}"/>
+        <javadoc destdir="${distdir.javadoc.dconfig-ui}" source="${javac.source}" 
+        		notree="${javadoc.notree}" use="${javadoc.use}" 
+        		nonavbar="${javadoc.nonavbar}" 
+        		noindex="${javadoc.noindex}" 
+        		splitindex="${javadoc.splitindex}" 
+        		author="${javadoc.author}" 
+        		version="${javadoc.version}" 
+        		windowtitle="${javadoc.windowtitle}" 
+        		private="${javadoc.private}" 
+        		additionalparam="${javadoc.additionalparam}" 
+        		failonerror="true" useexternalfile="true">
+            <classpath>
+			    <fileset dir="${distdir.dconfig-ui}/lib" includes="*.jar"/>
+            </classpath>
+            <sourcepath>
+                <pathelement location="${srcdir.dconfig-ui}/src/java"/>
+            </sourcepath>
+            <packageset dir="${srcdir.dconfig-ui}/src/java" includes="*/**"/>
+            <fileset dir="${srcdir.dconfig-ui}/src/java" includes="*.java"/>
+        </javadoc>
+    </target>
+
+    <target name="javadoc-webdemo" depends="webdemo">
+		<property name="javadoc.windowtitle" value="DConfig-WebDemo"/>
+        <mkdir  dir="${distdir.javadoc.dconfig-webdemo}"/>
+        <javadoc destdir="${distdir.javadoc.dconfig-webdemo}" source="${javac.source}" 
+        		notree="${javadoc.notree}" use="${javadoc.use}" 
+        		nonavbar="${javadoc.nonavbar}" 
+        		noindex="${javadoc.noindex}" 
+        		splitindex="${javadoc.splitindex}" 
+        		author="${javadoc.author}" 
+        		version="${javadoc.version}" 
+        		windowtitle="${javadoc.windowtitle}" 
+        		private="${javadoc.private}" 
+        		additionalparam="${javadoc.additionalparam}" 
+        		failonerror="true" useexternalfile="true">
+            <classpath>
+			    <fileset dir="${srcdir.dconfig-webdemo}/build/web/WEB-INF/lib" includes="*.jar"/>
+            </classpath>
+            <sourcepath>
+                <pathelement location="${srcdir.dconfig-webdemo}/src/java"/>
+            </sourcepath>
+            <packageset dir="${srcdir.dconfig-webdemo}/src/java" includes="*/**"/>
+            <fileset dir="${srcdir.dconfig-webdemo}/src/java" includes="*.java"/>
+        </javadoc>
+    </target>
+
+    <!--    dconfig-db   -->
+    <target name="db" description="Copy dconfig-db to dist/dconfig-db">
+        <mkdir  dir="${distdir.dconfig-db}"/>
+        <copy todir="${distdir.dconfig-db}">
+            <fileset dir="${srcdir.dconfig-db}" excludes="**/nbproject/" />
+        </copy>
+    </target>
+
+    <!--	WEB DEDMO 	-->
+    <target name="webdemo" depends="package-lib, ui-jnlp" description="Create WEB Demo dconfig-webdemo.war file">
+	<property name="javac.source" value="1.5"/>
+	<property name="javac.target" value="1.5"/>		
+        <copy todir="${srcdir.dconfig-webdemo}/web/WEB-INF/classes">
+            <fileset dir="${distdir.dconfig-lib}/conf" includes="**/*.properties"/>
+            <fileset dir="${srcdir.dconfig-db}/src/sql/${dconfig.version}" includes="**/derby*.sql, **/hsql*.sql"/>
+        </copy>
+        <copy todir="${srcdir.dconfig-webdemo}/web/WEB-INF/lib">
+            <fileset dir="${distdir.dconfig-lib}" includes="**/*.jar, **/*.txt" excludes="servlet.jar"/>
+            <fileset file="${srcdir.dconfig-db}/lib/derbyclient.jar"/>
+        </copy>
+
+        <ant antfile="build.xml" dir="dconfig-webdemo" target="clean"/>
+        <ant antfile="build.xml" dir="dconfig-webdemo" target="default"/>
+        <copy todir="${distdir.dconfig-webdemo}">
+           <fileset dir="dconfig-webdemo/dist" includes="**/*.war"/>
+           <fileset file="${srcdir.dconfig-webdemo}/readme.txt"/>
+        </copy>
+    </target>
+ 
+    <!--    Create ui-jnlp package   -->
+    <target name="ui-jnlp" depends="sign-jars" description="Create DConfig-UI JNLP Web Package">
+        <property name="javac.source" value="1.5"/>
+        <property name="javac.target" value="1.5"/>
+        <copy todir="${srcdir.dconfig-ui-jnlp}/web">
+            <fileset file="${distdir.dconfig-ui}/dconfig-ui.jar"/>
+        </copy>
+        <copy todir="${srcdir.dconfig-ui-jnlp}/web/lib">
+            <fileset dir="${distdir.dconfig-ui}/lib" excludes="servlet.jar"/>
+        </copy>
+        <ant antfile="build.xml" dir="dconfig-ui-jnlp" target="clean"/>
+        <ant antfile="build.xml" dir="dconfig-ui-jnlp" target="ui-jnlp"/>
+        <copy todir="${distdir.dconfig-ui-jnlp}">
+           <fileset dir="dconfig-ui-jnlp/dist" includes="**/*.war"/>
+        </copy>
+    </target>
+
+    <!-- Convenience targets -->
+    <target name="compile" depends="compile-ui" />
+    <target name="lib" depends="package-lib" description="Alias for package-lib"/>
+    <target name="ui" depends="package-ui, db" description="Alias for package-ui"/>
+    <target name="javadoc" depends="javadoc-lib, javadoc-ui" description="Call javadoc-lib, javadoc-ui"/>
+
+    <target name="deploy" depends="webdemo" description="Deploy dconfig-webdemo.war to deploy.home defined in build.properties, default to Tomcat">
+        <copy todir="${deploy.home}" file="${distdir.dconfig-webdemo}/dconfig-webdemo.war"/>
+    </target>
+
+    <target name="all" depends="clean, ui-jnlp, webdemo, javadoc, db" description="Default target, call clean, ui-jnlp, webdemo, javadoc, db">
+        <copy todir="${distdir}" file="${basedir}/LICENSE.txt"/>
+        <copy tofile="${distdir}/README.txt" file="${basedir}/docs/README-bin.txt"/>
+    </target>
+
+    <target name="run" depends="package-ui" description="Run GUI Editor without demo database">
+       <java classname="org.moonwave.dconfig.ui.CfgEditor" fork="true">
+         <classpath>
+            <pathelement location="${distdir.dconfig-ui}/${app.name}-ui.jar"/>
+            <fileset dir="${distdir.dconfig-ui}/lib" includes="*.jar"/>
+         </classpath>
+       </java>
+    </target>
+
+    <target name="run-derby" depends="package-ui" description="Run GUI Editor with embedded Derby database">
+        <copy todir="${distdir.dconfig-ui}/lib" >
+           <fileset dir="${srcdir.dconfig-db}/lib" includes="derby*.jar"/>
+        </copy>
+       <java classname="org.moonwave.dconfig.ui.CfgEditor" fork="true">
+         <arg line="demo derby"/>
+         <classpath>
+            <pathelement location="${distdir.dconfig-ui}/${app.name}-ui.jar"/>
+            <fileset dir="${distdir.dconfig-ui}/lib" includes="*.jar"/>
+         </classpath>
+       </java>
+    </target>
+
+    <target name="run-hsqldb" depends="package-ui" description="Run GUI Editor with embedded Hsqldb database">
+        <copy todir="${distdir.dconfig-ui}/lib" >
+           <fileset dir="${srcdir.dconfig-db}/lib" includes="hsqldb*.jar"/>
+        </copy>
+       <java classname="org.moonwave.dconfig.ui.CfgEditor" fork="true">
+         <arg line="demo hsqldb"/>
+         <classpath>
+            <pathelement location="${distdir.dconfig-ui}/${app.name}-ui.jar"/>
+            <fileset dir="${distdir.dconfig-ui}/lib" includes="*.jar"/>
+         </classpath>
+       </java>
+    </target>
+    
+    <target name="run-h2" depends="package-ui" description="Run GUI Editor with embedded H2 database">
+        <copy todir="${distdir.dconfig-ui}/lib" >
+           <fileset dir="${srcdir.dconfig-db}/lib" includes="h2*.jar"/>
+        </copy>
+       <java classname="org.moonwave.dconfig.ui.CfgEditor" fork="true">
+         <arg line="demo h2"/>
+         <classpath>
+            <pathelement location="${distdir.dconfig-ui}/${app.name}-ui.jar"/>
+            <fileset dir="${distdir.dconfig-ui}/lib" includes="*.jar"/>
+         </classpath>
+       </java>
+    </target>    
+</project>

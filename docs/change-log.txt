@@ -1,0 +1,19 @@
+Dynamic Configuration Toolkit Change History
+
++ add
+# update
+* fix
+
+1.0-beta1    2007-2-6
+  + Release build.xml
+
+1.0-beta2    2007-4-6
+  + Added JSF, Derby web demo
+  # Update readme files
+  + Added reference, inherited fields in sql scripts
+  * Long editor insert mode not functional
+
+1.0-rc1
+  + Enabled drap & drop on tree
+  # Removed jfreechart.jar, use source code to reduce the package size
+  # Refactored derby.jar reference to reduce the package size

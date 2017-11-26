@@ -1,0 +1,10 @@
+<jnlp-versions>
+  <resource>
+    <pattern>
+    <name>dconfig-ui.jar</name>
+    <version-id>1.2</version-id>
+    </pattern>
+    <file>dconfig-ui.jar</file>
+  </resource>
+</jnlp-versions>
+

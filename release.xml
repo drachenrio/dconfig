@@ -1,0 +1,101 @@
+<?xml version="1.0" ?>
+
+<project name="dconfig source code and distribution release" default="release-all">
+
+
+    <!-- General Configuration -->
+    <property file="build.properties"/>
+
+    <property name="release.foldername" value="dconfig-${release.id}"/>
+    <property name="release.filename" value="${release.foldername}.zip"/>
+    <property name="release-bin.foldername" value="${release.foldername}-bin"/>
+    <property name="release-bin.filename" value="${release.foldername}-bin.zip"/>
+    <property name="release-src.foldername" value="${release.foldername}-src"/>
+    <property name="release-src.filename" value="${release.foldername}-src.zip"/>
+
+    <property name="dest.main.dir" location="/home/jonathan/release/dconfig"/>
+
+
+    <target name="-release-bin">
+        <delete file="${dest.main.dir}/${release-bin.filename}"/>
+        <delete dir="${dest.main.dir}/bin"/>
+
+        <ant antfile="build.xml" dir="${basedir}" target="clean"/>
+        <ant antfile="build.xml" dir="${basedir}" target="all"/>
+
+        <property name="dest.dir" location="${dest.main.dir}/bin/${release-bin.foldername}"/>
+
+        <copy todir="${dest.dir}/docs/javadoc">
+           <fileset dir="${basedir}/dist/docs/javadoc" />
+        </copy>
+
+        <copy todir="${dest.dir}">
+           <fileset dir="${basedir}/dist" />
+        </copy>
+
+        <zip destfile="${dest.main.dir}/${release-bin.filename}" basedir="${dest.main.dir}/bin" />
+    </target>
+
+    <target name="-release-src">
+        <delete file="${dest.main.dir}/${release-src.filename}"/>
+        <delete dir="${dest.main.dir}/src"/>
+
+        <!-- run ant -f build.xml javadoc first -->
+        <ant antfile="build.xml" dir="${basedir}/dconfig-webdemo" target="clean-all"/>
+        <ant antfile="build.xml" dir="${basedir}/dconfig-ui-jnlp" target="clean-all"/>
+        <ant antfile="build.xml" dir="${basedir}/dconfig-lib" target="clean"/>
+        <ant antfile="build.xml" dir="${basedir}/dconfig-ui" target="clean"/>
+        <ant antfile="build.xml" dir="${basedir}" target="clean"/>
+        <ant antfile="build.xml" dir="${basedir}" target="javadoc"/>
+
+        <property name="dest.dir" location="${dest.main.dir}/src/${release-src.foldername}"/>
+
+        <copy todir="${dest.dir}/dconfig-db">
+           <fileset dir="${basedir}/dconfig-db" excludes="**/*.svn, **/nbproject/**" />
+        </copy>
+        <copy todir="${dest.dir}/dconfig-lib">
+           <fileset dir="${basedir}/dconfig-lib" excludes="**/*.svn,  **/nbproject/**" />
+        </copy>
+        <copy todir="${dest.dir}/dconfig-ui">
+           <fileset dir="${basedir}/dconfig-ui" excludes="**/*.svn, **/*.xml, **/*.form, **/nbproject/**" />
+        </copy>
+        <copy todir="${dest.dir}/dconfig-ui-jnlp">
+           <fileset dir="${basedir}/dconfig-ui-jnlp" excludes="**/*.svn, **/private/**" />
+        </copy>
+        <copy todir="${dest.dir}/dconfig-webdemo">
+           <fileset dir="${basedir}/dconfig-webdemo" excludes="**/*.svn, **/private/**" />
+        </copy>
+        <copy todir="${dest.dir}/docs">
+           <fileset dir="${basedir}/docs" includes="**/*.txt" excludes="**/*.svn, **/private/**" />
+        </copy>
+        <copy todir="${dest.dir}" file="${basedir}/LICENSE.txt"/>
+        <copy todir="${dest.dir}" file="${basedir}/keystore"/>
+        <copy todir="${dest.dir}" file="${basedir}/manifest.mf"/>
+        <copy todir="${dest.dir}" file="${basedir}/build.properties"/>
+        <copy todir="${dest.dir}" file="${basedir}/build.xml"/>
+        <copy tofile="${dest.dir}/README.txt" file="${basedir}/docs/README-src.txt"/>
+
+        <zip destfile="${dest.main.dir}/${release-src.filename}" basedir="${dest.main.dir}/src" />
+
+    </target>
+    <target name="webdemo" depends="-release-bin">
+        <property name="dest.webdemo" location="${dest.main.dir}/webdemo/webdemo-jsf-derby"/>
+        <delete file="${dest.main.dir}/webdemo-jsf-derby.zip"/>
+        <delete dir="${dest.webdemo}"/>
+        <mkdir dir="${dest.webdemo}"/>
+        <copy todir="${dest.webdemo}/dconfig-db">
+           <fileset dir="${basedir}/dconfig-db" excludes="**/*.svn, **/nbproject/**, **/dcfgdemo/**" />
+        </copy>
+        <copy todir="${dest.webdemo}/dconfig-webdemo">
+           <fileset dir="${basedir}/dist/dconfig-webdemo/" />
+        </copy>
+        <copy todir="${dest.webdemo}/">
+           <fileset file="${basedir}/dconfig-webdemo/readme-package.txt" />
+        </copy>
+        <zip destfile="${dest.main.dir}/webdemo-jsf-derby.zip" basedir="${dest.main.dir}/webdemo/" />
+    </target>
+    <target name="bin" depends="-release-bin" description="Release Binaries"/>
+    <target name="src" depends="-release-src" description="Release Source Code"/>
+    <target name="release-all" depends="bin, webdemo, src">
+    </target>
+</project>
